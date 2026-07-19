@@ -153,35 +153,12 @@
             <div class="flex justify-center mb-4"><div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:rgba(16,185,129,0.15)"><i class="fas fa-bolt" style="color:var(--accent);font-size:32px"></i></div></div>
             <h1>ServicePro</h1>
             <p class="sub">Masuk ke Sistem Manajemen Service</p>
-            
-            <!-- Tab Login / Register -->
-            <div class="flex rounded-lg overflow-hidden mb-4" style="background:var(--bg2);border:1px solid var(--border)">
-                <button class="flex-1 py-2 text-sm font-semibold transition-all" id="loginTab" style="background:var(--accent);color:#fff" onclick="switchAuthTab('login')">Masuk</button>
-                <button class="flex-1 py-2 text-sm font-semibold transition-all" id="registerTab" style="background:transparent;color:var(--muted)" onclick="switchAuthTab('register')">Daftar</button>
-            </div>
-
-            <!-- Login Form -->
             <form id="loginForm" onsubmit="return handleLogin(event)" class="space-y-4">
                 <div><label class="form-label">Email</label><input type="email" class="form-input" id="loginEmail" placeholder="Masukkan email" required autocomplete="email"></div>
                 <div><label class="form-label">Password</label><input type="password" class="form-input" id="loginPass" placeholder="Masukkan password" required autocomplete="current-password"></div>
                 <p id="loginError" class="text-sm hidden" style="color:var(--danger)"><i class="fas fa-exclamation-circle mr-1"></i>Email atau password salah</p>
                 <button type="submit" class="btn-primary w-full justify-center text-base py-3"><i class="fas fa-right-to-bracket"></i> Masuk</button>
             </form>
-
-            <!-- Register Form -->
-            <form id="registerForm" onsubmit="return handleRegister(event)" class="space-y-4" style="display:none">
-                <div><label class="form-label">Nama Lengkap</label><input type="text" class="form-input" id="registerName" placeholder="Nama lengkap" required></div>
-                <div><label class="form-label">Email</label><input type="email" class="form-input" id="registerEmail" placeholder="Masukkan email" required autocomplete="email"></div>
-                <div><label class="form-label">Password</label><input type="password" class="form-input" id="registerPass" placeholder="Minimal 6 karakter" required minlength="6" autocomplete="new-password"></div>
-                <p id="registerError" class="text-sm hidden" style="color:var(--danger)"><i class="fas fa-exclamation-circle mr-1"></i>Gagal mendaftar</p>
-                <button type="submit" class="btn-primary w-full justify-center text-base py-3"><i class="fas fa-user-plus"></i> Daftar</button>
-            </form>
-
-            <!-- Reset Password -->
-            <div class="text-center mt-3">
-                <button onclick="resetPassword()" class="text-xs" style="color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline">Lupa password?</button>
-            </div>
-
             <p class="text-center text-xs mt-5" style="color:var(--muted)">By : Gregorius Berlin @2026</p>
         </div>
     </div>
@@ -208,7 +185,7 @@
                 <div class="flex items-center justify-between px-2">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style="background:rgba(16,185,129,0.2);color:var(--accent)" id="userAvatar">AD</div>
-                        <div><p class="text-xs font-semibold" style="color:var(--text)" id="userDisplayName">Admin</p><p class="text-xs" style="color:var(--muted)" id="userEmail">user@email.com</p></div>
+                        <div><p class="text-xs font-semibold" style="color:var(--text)" id="userDisplayName">Admin</p><p class="text-xs" style="color:var(--muted)" id="userEmailDisplay">user@email.com</p></div>
                     </div>
                     <button onclick="handleLogout()" title="Keluar" style="color:var(--muted);font-size:16px;background:none;border:none;cursor:pointer;transition:color 0.2s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'"><i class="fas fa-right-from-bracket"></i></button>
                 </div>
@@ -257,113 +234,54 @@
     let isLoggedIn=false,currentUser=null;
     let unsubscribeServices=null,unsubscribeJenis=null,unsubscribeSparepart=null;
 
-    // ===== AUTH FUNCTIONS =====
-    function switchAuthTab(tab) {
-        if(tab === 'login') {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginTab').style.background = 'var(--accent)';
-            document.getElementById('loginTab').style.color = '#fff';
-            document.getElementById('registerTab').style.background = 'transparent';
-            document.getElementById('registerTab').style.color = 'var(--muted)';
-        } else {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-            document.getElementById('registerTab').style.background = 'var(--accent)';
-            document.getElementById('registerTab').style.color = '#fff';
-            document.getElementById('loginTab').style.background = 'transparent';
-            document.getElementById('loginTab').style.color = 'var(--muted)';
-        }
-        document.getElementById('loginError').classList.add('hidden');
-        document.getElementById('registerError').classList.add('hidden');
-    }
-
-    async function handleLogin(e) {
+    // ===== AUTH =====
+    function handleLogin(e){
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPass').value;
         
-        try {
-            const userCredential = await auth.signInWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            
-            // Get user display name from Firestore or use email
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            const userData = userDoc.exists ? userDoc.data() : {};
-            
-            currentUser = {
-                uid: user.uid,
-                email: user.email,
-                displayName: userData.displayName || user.email?.split('@')[0] || 'User'
-            };
-            
-            isLoggedIn = true;
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('appLayout').classList.add('show');
-            document.getElementById('userDisplayName').textContent = currentUser.displayName;
-            document.getElementById('userEmail').textContent = currentUser.email;
-            document.getElementById('userAvatar').textContent = currentUser.displayName.charAt(0).toUpperCase();
-            document.getElementById('loginError').classList.add('hidden');
-            document.getElementById('loginForm').reset();
-            
-            initRealtimeListeners();
-            showToast('Selamat datang, ' + currentUser.displayName + '!');
-        } catch(error) {
-            console.error('Login error:', error);
-            const errorMsg = document.getElementById('loginError');
-            errorMsg.textContent = error.message;
-            errorMsg.classList.remove('hidden');
-        }
-        return false;
-    }
-
-    async function handleRegister(e) {
-        e.preventDefault();
-        const name = document.getElementById('registerName').value.trim();
-        const email = document.getElementById('registerEmail').value.trim();
-        const password = document.getElementById('registerPass').value;
+        // Show loading state
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        btn.disabled = true;
         
-        try {
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            
-            // Save user data to Firestore
-            await db.collection('users').doc(user.uid).set({
-                displayName: name,
-                email: email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                currentUser = userCredential.user;
+                isLoggedIn = true;
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('appLayout').classList.add('show');
+                document.getElementById('userDisplayName').textContent = currentUser.displayName || 'Admin';
+                document.getElementById('userEmailDisplay').textContent = currentUser.email;
+                document.getElementById('userAvatar').textContent = (currentUser.displayName || 'Admin').charAt(0).toUpperCase();
+                document.getElementById('loginError').classList.add('hidden');
+                document.getElementById('loginForm').reset();
+                initRealtimeListeners();
+                showToast('Selamat datang, ' + (currentUser.displayName || 'Admin') + '!', 'success');
+            })
+            .catch((error) => {
+                let errorMsg = 'Email atau password salah';
+                if (error.code === 'auth/user-not-found') {
+                    errorMsg = 'Email tidak terdaftar';
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMsg = 'Password salah';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMsg = 'Format email tidak valid';
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMsg = 'Terlalu banyak percobaan, coba lagi nanti';
+                }
+                document.getElementById('loginError').textContent = errorMsg;
+                document.getElementById('loginError').classList.remove('hidden');
+            })
+            .finally(() => {
+                btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Masuk';
+                btn.disabled = false;
             });
-            
-            // Update profile
-            await user.updateProfile({ displayName: name });
-            
-            showToast('Akun berhasil dibuat! Silakan masuk.');
-            switchAuthTab('login');
-            document.getElementById('registerForm').reset();
-            document.getElementById('loginEmail').value = email;
-            document.getElementById('registerError').classList.add('hidden');
-        } catch(error) {
-            console.error('Register error:', error);
-            const errorMsg = document.getElementById('registerError');
-            errorMsg.textContent = error.message;
-            errorMsg.classList.remove('hidden');
-        }
+        
         return false;
     }
 
-    async function resetPassword() {
-        const email = prompt('Masukkan email untuk reset password:');
-        if(!email) return;
-        
-        try {
-            await auth.sendPasswordResetEmail(email);
-            showToast('Email reset password telah dikirim ke ' + email);
-        } catch(error) {
-            showToast('Gagal reset password: ' + error.message, 'error');
-        }
-    }
-
-    function handleLogout() {
+    function handleLogout(){
         if(!confirm('Yakin ingin keluar?')) return;
         auth.signOut().then(() => {
             isLoggedIn = false;
@@ -375,50 +293,32 @@
             if(unsubscribeSparepart) unsubscribeSparepart();
             document.getElementById('loginPage').classList.remove('hidden');
             document.getElementById('appLayout').classList.remove('show');
-            document.getElementById('loginForm').reset();
-            document.getElementById('registerForm').reset();
-            showToast('Anda telah keluar');
-        }).catch(error => {
-            showToast('Gagal logout: ' + error.message, 'error');
+            showToast('Anda telah keluar', 'info');
+        }).catch((error) => {
+            showToast('Gagal keluar: ' + error.message, 'error');
         });
     }
 
-    // ===== AUTH STATE LISTENER =====
+    // Check if user already logged in
     auth.onAuthStateChanged((user) => {
-        if(user) {
-            // Already logged in, just update user info
-            if(!isLoggedIn) {
-                db.collection('users').doc(user.uid).get().then(doc => {
-                    const userData = doc.exists ? doc.data() : {};
-                    currentUser = {
-                        uid: user.uid,
-                        email: user.email,
-                        displayName: userData.displayName || user.email?.split('@')[0] || 'User'
-                    };
-                    isLoggedIn = true;
-                    document.getElementById('loginPage').classList.add('hidden');
-                    document.getElementById('appLayout').classList.add('show');
-                    document.getElementById('userDisplayName').textContent = currentUser.displayName;
-                    document.getElementById('userEmail').textContent = currentUser.email;
-                    document.getElementById('userAvatar').textContent = currentUser.displayName.charAt(0).toUpperCase();
-                    initRealtimeListeners();
-                });
-            }
+        if (user) {
+            currentUser = user;
+            isLoggedIn = true;
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('appLayout').classList.add('show');
+            document.getElementById('userDisplayName').textContent = user.displayName || 'Admin';
+            document.getElementById('userEmailDisplay').textContent = user.email;
+            document.getElementById('userAvatar').textContent = (user.displayName || 'Admin').charAt(0).toUpperCase();
+            initRealtimeListeners();
         } else {
-            // User is signed out
-            if(isLoggedIn) {
-                isLoggedIn = false;
-                currentUser = null;
-                if(unsubscribeServices) unsubscribeServices();
-                if(unsubscribeJenis) unsubscribeJenis();
-                if(unsubscribeSparepart) unsubscribeSparepart();
-                document.getElementById('appLayout').classList.remove('show');
-                document.getElementById('loginPage').classList.remove('hidden');
+            if (isLoggedIn) {
+                // User was logged out
+                handleLogout();
             }
         }
     });
 
-    // ===== THEME =====
+    // ===== THEME TOGGLE =====
     function toggleTheme(){
         const html=document.documentElement;
         const current=html.getAttribute('data-theme');
@@ -478,7 +378,7 @@
         else if (currentPage === 'laporan') renderLaporan();
     }
 
-    // ===== UTILS (same as before) =====
+    // ===== UTILS =====
     function formatRupiah(n){if(!n&&n!==0)return'Rp 0';return'Rp '+Number(n).toLocaleString('id-ID');}
     function formatDate(ts){if(!ts)return'-';const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});}
     function formatDateTime(ts){if(!ts)return'-';const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
@@ -488,32 +388,270 @@
     function openModal(t,b){document.getElementById('modalTitle').textContent=t;document.getElementById('modalBody').innerHTML=b;document.getElementById('modalOverlay').classList.add('show');}
     function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
 
-    // ===== PDF (same as before) =====
+    // ===== PDF =====
     function downloadBuktiTitip(sd){const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:[80,200]});const pW=80,mL=4,mR=4,cW=pW-mL-mR;let y=6;const d=sd.tanggalMasuk?.toDate?sd.tanggalMasuk.toDate():new Date(),tg=d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),jm=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});function ct(t,yp,s,st){doc.setFontSize(s);doc.setFont('helvetica',st==='bold'?'bold':'normal');const tw=doc.getTextWidth(t);doc.text(t,mL+(cW-tw)/2,yp);}function dl(yp){doc.setLineDashPattern([1.5,1],0);doc.line(mL,yp,pW-mR,yp);doc.setLineDashPattern([],0);}function af(l,v,yp,lw){doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text(l,mL,yp);doc.setFont('helvetica','normal');const w=lw||22,ln=doc.splitTextToSize(v||'-',cW-w);doc.text(ln,mL+w,yp);return Math.max(4,ln.length*3.5);}ct('SERVICE ELEKTRONIK',y,12,'bold');y+=5;ct('Jl. R.W. Monginsidi - Bhoanawa - Ende - Hp: 085333071119',y,6,'normal');y+=4;ct('BUKTI TITIP BARANG',y,9,'bold');y+=6;dl(y);y+=4;y+=af('No. Service',sd.noService,y);y+=af('Tanggal',`${tg} ${jm}`,y);y+=2;dl(y);y+=4;doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('IDENTITAS PELANGGAN',mL,y);y+=5;[['Nama',sd.namaPelanggan],['Telepon',sd.noTelp],['Alamat',sd.alamat]].forEach(([l,v])=>{y+=af(l,v,y);});y+=2;dl(y);y+=4;doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('DATA BARANG',mL,y);y+=5;[['Jenis',sd.jenisBarang],['Merek',sd.merek],['Type',sd.typeBarang],['No. Seri',sd.noSeri],['Kelengkapan',sd.kelengkapan],['Keluhan',sd.keluhan]].forEach(([l,v])=>{y+=af(l,v,y,26);});y+=2;dl(y);y+=4;doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text('Estimasi Biaya',mL,y);doc.setFont('helvetica','normal');doc.text(formatRupiah(sd.estimasiBiaya),mL+26,y);y+=6;dl(y);y+=5;doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text('Petugas,',mL+2,y);doc.text('Pemilik,',mL+cW-25,y);y+=16;doc.text('(.................)',mL+2,y);doc.text('(.................)',mL+cW-25,y);y+=6;dl(y);y+=4;ct('Simpan bukti ini sebagai tanda penitipan',y,6,'normal');y+=3;ct('Barang yang tidak diambil lebih dari 30 hari',y,6,'normal');y+=3;ct('menjadi hak bengkel service.',y,6,'normal');doc.save(`Bukti_Titip_${sd.noService}.pdf`);showToast('Bukti titip berhasil diunduh');}
 
     function downloadStrukPDF(){if(!selectedAmbilId){showToast('Pilih barang terlebih dahulu','error');return;}const s=allServices.find(x=>x.id===selectedAmbilId);if(!s)return;const bs=Number(document.getElementById('aBiaya').value)||0,bp=Number(document.getElementById('aSparepart').value)||0,ct2=document.getElementById('aCatatan').value.trim(),tl=bs+bp;const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:[80,280]});const pW=80,mL=4,mR=4,cW=pW-mL-mR;let y=6;const nw=new Date(),tg=nw.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),jm=nw.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});function cte(t,yp,s,st){doc.setFontSize(s);doc.setFont('helvetica',st==='bold'?'bold':'normal');const tw=doc.getTextWidth(t);doc.text(t,mL+(cW-tw)/2,yp);}function dle(yp){doc.setLineDashPattern([1.5,1],0);doc.line(mL,yp,pW-mR,yp);doc.setLineDashPattern([],0);}function afe(l,v,yp,lw){doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text(l,mL,yp);doc.setFont('helvetica','normal');const w=lw||22,ln=doc.splitTextToSize(v||'-',cW-w);doc.text(ln,mL+w,yp);return Math.max(4,ln.length*3.5);}cte('SERVICE ELEKTRONIK',y,12,'bold');y+=5;cte('Jl. R.W. Monginsidi - Bhoanawa - Ende - Hp: 085333071119',y,6,'normal');y+=4;cte('STRUK PENGAMBILAN BARANG',y,8,'bold');y+=6;dle(y);y+=4;y+=afe('No. Service',s.noService,y);y+=afe('Tanggal',tg,y);y+=afe('Jam',jm,y);y+=2;dle(y);y+=4;doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('PELANGGAN',mL,y);y+=5;y+=afe('Nama',s.namaPelanggan,y);y+=afe('Telepon',s.noTelp||'-',y);y+=afe('Alamat',s.alamat||'-',y,22);y+=2;dle(y);y+=4;doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('BARANG',mL,y);y+=5;y+=afe('Jenis',s.jenisBarang,y);y+=afe('Merek',s.merek,y);y+=afe('Type',s.typeBarang||'-',y);y+=afe('No. Seri',s.noSeri||'-',y,22);y+=afe('Kelengkapan',s.kelengkapan||'-',y,22);y+=afe('Keluhan',s.keluhan||'-',y,22);if(ct2)y+=afe('Catatan',ct2,y,22);y+=2;dle(y);y+=4;const rows=savedSparepartDrafts[selectedAmbilId]||[];if(rows.length>0&&rows.some(r=>r.sparepartId)){doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('SPAREPART',mL,y);y+=5;rows.forEach(row=>{const sp=allSparepart.find(x=>x.id===row.sparepartId);if(sp){const sub=Number(sp.harga)*row.qty;doc.setFontSize(7);doc.setFont('helvetica','normal');const nl=doc.splitTextToSize(`${sp.nama} x${row.qty}`,cW-22);doc.text(nl,mL,y);const ss=formatRupiah(sub);doc.text(ss,pW-mR-doc.getTextWidth(ss),y);y+=Math.max(4,nl.length*3.5);}});y+=2;dle(y);y+=4;}doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text('Biaya Service',mL,y);doc.setFont('helvetica','normal');const bs1=formatRupiah(bs);doc.text(bs1,pW-mR-doc.getTextWidth(bs1),y);y+=4;doc.setFont('helvetica','bold');doc.text('Biaya Sparepart',mL,y);doc.setFont('helvetica','normal');const bp1=formatRupiah(bp);doc.text(bp1,pW-mR-doc.getTextWidth(bp1),y);y+=5;dle(y);y+=4;doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('TOTAL',mL,y);const ts1=formatRupiah(tl);doc.text(ts1,pW-mR-doc.getTextWidth(ts1),y);y+=6;dle(y);y+=5;doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text('Petugas,',mL+2,y);doc.text('Pemilik,',mL+cW-25,y);y+=16;doc.text('(.................)',mL+2,y);doc.text('(.................)',mL+cW-25,y);y+=6;dle(y);y+=4;cte('Terima kasih atas kepercayaan Anda',y,6,'normal');y+=3;cte('Barang yang telah diterima bukan tanggung jawab bengkel',y,5.5,'normal');doc.save(`Struk_${s.noService}.pdf`);showToast('Struk PDF berhasil diunduh');}
 
-    // [REST OF THE CODE SAME AS ORIGINAL - all CRUD functions remain unchanged]
-    // ...
-    // The following functions are the same as in the original code:
-    // downloadStrukRiwayatPDF, exportDaftarExcel, exportLaporanExcel, 
-    // navigate, renderDashboard, renderRevenueChart, renderStatusChart,
-    // renderTerima, simpanTerima, renderDaftar, ubahStatus, editService,
-    // simpanEditService, hapusService, renderAdministrasi, cariPengambilan,
-    // pilihPengambilan, tambahBarisSparepart, hapusBarisSparepart,
-    // onSparepartSelect, onQtyChange, saveSparepartDraft, renderSparepartPicker,
-    // hitungTotalSparepart, simpanSparepartKeDatabase, prosesAdministrasi,
-    // cetakStruk, renderSelesai, renderJenis, simpanJenis, editJenis,
-    // simpanEditJenis, hapusJenis, renderStok, simpanSparepart, editSparepart,
-    // simpanEditSparepart, tambahStok, hapusSparepart, renderRiwayat,
-    // lihatStrukRiwayat, renderLaporan, renderMonthlyChart, renderJenisChart,
-    // updateClock, initApp, and all the remaining functions.
-    // They are exactly the same as in the original code,
-    // so I'm not repeating them here for brevity.
-    // The only changes are in the authentication section above.
+    function downloadStrukRiwayatPDF(id){const s=allServices.find(x=>x.id===id);if(!s)return;const bs=Number(s.biayaService||0),bp=Number(s.biayaSparepart||0),ct2=s.catatanTeknisi||'',tl=bs+bp;const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:[80,280]});const pW=80,mL=4,mR=4,cW=pW-mL-mR;let y=6;const dA=s.tanggalAmbil?.toDate?s.tanggalAmbil.toDate():new Date(),tg=dA.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}),jm=dA.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});function cte(t,yp,s,st){doc.setFontSize(s);doc.setFont('helvetica',st==='bold'?'bold':'normal');const tw=doc.getTextWidth(t);doc.text(t,mL+(cW-tw)/2,yp);}function dle(yp){doc.setLineDashPattern([1.5,1],0);doc.line(mL,yp,pW-mR,yp);doc.setLineDashPattern([],0);}function afe(l,v,yp,lw){doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text(l,mL,yp);doc.setFont('helvetica','normal');const w=lw||22,ln=doc.splitTextToSize(v||'-',cW-w);doc.text(ln,mL+w,yp);return Math.max(4,ln.length*3.5);}cte('SERVICE ELEKTRONIK',y,12,'bold');y+=5;cte('Jl. R.W. Monginsidi - Bhoanawa - Ende - Hp: 085333071119',y,6,'normal');y+=4;cte('STRUK PENGAMBILAN BARANG',y,8,'bold');y+=6;dle(y);y+=4;y+=afe('No. Service',s.noService,y);y+=afe('Tanggal',tg,y);y+=afe('Jam',jm,y);y+=2;dle(y);y+=4;doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('PELANGGAN',mL,y);y+=5;y+=afe('Nama',s.namaPelanggan,y);y+=afe('Telepon',s.noTelp||'-',y);y+=afe('Alamat',s.alamat||'-',y,22);y+=2;dle(y);y+=4;doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('BARANG',mL,y);y+=5;y+=afe('Jenis',s.jenisBarang,y);y+=afe('Merek',s.merek,y);y+=afe('Type',s.typeBarang||'-',y);y+=afe('No. Seri',s.noSeri||'-',y,22);y+=afe('Kelengkapan',s.kelengkapan||'-',y,22);y+=afe('Keluhan',s.keluhan||'-',y,22);if(ct2)y+=afe('Catatan',ct2,y,22);y+=2;dle(y);y+=4;if(s.sparepartDigunakan&&s.sparepartDigunakan.length>0){doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('SPAREPART',mL,y);y+=5;s.sparepartDigunakan.forEach(sp=>{doc.setFontSize(7);doc.setFont('helvetica','normal');const nl=doc.splitTextToSize(`${sp.nama} x${sp.qty}`,cW-22);doc.text(nl,mL,y);const ss=formatRupiah(sp.subtotal);doc.text(ss,pW-mR-doc.getTextWidth(ss),y);y+=Math.max(4,nl.length*3.5);});y+=2;dle(y);y+=4;}doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text('Biaya Service',mL,y);doc.setFont('helvetica','normal');const bs1=formatRupiah(bs);doc.text(bs1,pW-mR-doc.getTextWidth(bs1),y);y+=4;doc.setFont('helvetica','bold');doc.text('Biaya Sparepart',mL,y);doc.setFont('helvetica','normal');const bp1=formatRupiah(bp);doc.text(bp1,pW-mR-doc.getTextWidth(bp1),y);y+=5;dle(y);y+=4;doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('TOTAL',mL,y);const ts1=formatRupiah(tl);doc.text(ts1,pW-mR-doc.getTextWidth(ts1),y);y+=6;dle(y);y+=5;doc.setFontSize(7);doc.setFont('helvetica','normal');doc.text('Petugas,',mL+2,y);doc.text('Pemilik,',mL+cW-25,y);y+=16;doc.text('(.................)',mL+2,y);doc.text('(.................)',mL+cW-25,y);y+=6;dle(y);y+=4;cte('Terima kasih atas kepercayaan Anda',y,6,'normal');y+=3;cte('Barang yang telah diterima bukan tanggung jawab bengkel',y,5.5,'normal');doc.save(`Struk_${s.noService}.pdf`);showToast('Struk PDF berhasil diunduh');}
+
+    // ===== EXPORT EXCEL =====
+    function exportDaftarExcel(){
+        const search=(document.getElementById('searchDaftar')?.value||'').toLowerCase();
+        const filter=document.getElementById('filterStatus')?.value||'';
+        let data=allServices;
+        if(filter)data=data.filter(s=>s.status===filter);
+        if(search)data=data.filter(s=>(s.noService||'').toLowerCase().includes(search)||(s.namaPelanggan||'').toLowerCase().includes(search)||(s.merek||'').toLowerCase().includes(search));
+        
+        if(data.length===0){
+            showToast('Tidak ada data untuk diexport','info');
+            return;
+        }
+        
+        const excelData = data.map(s => ({
+            'No. Service': s.noService || '',
+            'Tanggal Masuk': formatDate(s.tanggalMasuk),
+            'Pelanggan': s.namaPelanggan || '',
+            'Telepon': s.noTelp || '',
+            'Alamat': s.alamat || '',
+            'Jenis Barang': s.jenisBarang || '',
+            'Merek': s.merek || '',
+            'Type': s.typeBarang || '',
+            'No. Seri': s.noSeri || '',
+            'Kelengkapan': s.kelengkapan || '',
+            'Keluhan': s.keluhan || '',
+            'Biaya Service': (Number(s.biayaService)||0),
+            'Biaya Sparepart': (Number(s.biayaSparepart)||0),
+            'Total Biaya': (Number(s.biayaService||0) + Number(s.biayaSparepart||0)),
+            'Status': s.status || ''
+        }));
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        XLSX.utils.book_append_sheet(wb, ws, 'Daftar Service');
+        XLSX.writeFile(wb, `daftar_service_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showToast('File Excel berhasil diunduh');
+    }
+
+    function exportLaporanExcel(){
+        const bv=document.getElementById('laporanBulan')?.value;
+        let data = allServices.filter(s=>s.status==='diambil');
+        if(bv){
+            const[y,m]=bv.split('-').map(Number);
+            data = data.filter(s=>{
+                const t=s.tanggalAmbil?.toDate?s.tanggalAmbil.toDate():null;
+                return t&&t.getFullYear()===y&&(t.getMonth()+1)===m;
+            });
+        }
+        
+        if(data.length===0){
+            showToast('Tidak ada data untuk diexport','info');
+            return;
+        }
+        
+        const excelData = data.map(s => ({
+            'No': data.indexOf(s)+1,
+            'No. Service': s.noService || '',
+            'Tanggal Ambil': formatDate(s.tanggalAmbil),
+            'Pelanggan': s.namaPelanggan || '',
+            'Telepon': s.noTelp || '',
+            'Alamat': s.alamat || '',
+            'Jenis Barang': s.jenisBarang || '',
+            'Merek': s.merek || '',
+            'Type': s.typeBarang || '',
+            'No. Seri': s.noSeri || '',
+            'Kelengkapan': s.kelengkapan || '',
+            'Keluhan': s.keluhan || '',
+            'Biaya Service': (Number(s.biayaService)||0),
+            'Biaya Sparepart': (Number(s.biayaSparepart)||0),
+            'Total Biaya': (Number(s.biayaService||0) + Number(s.biayaSparepart||0))
+        }));
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        XLSX.utils.book_append_sheet(wb, ws, 'Laporan Service');
+        XLSX.writeFile(wb, `laporan_service_${bv||new Date().toISOString().slice(0,7)}.xlsx`);
+        showToast('File Excel berhasil diunduh');
+    }
+
+    // ===== NAVIGASI =====
+    function navigate(page){currentPage=page;document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));const section=document.getElementById(`page-${page}`);if(section)section.classList.add('active');const navItem=document.querySelector(`.nav-item[data-page="${page}"]`);if(navItem)navItem.classList.add('active');const titles={dashboard:'Dashboard',terima:'Terima Barang',daftar:'Daftar Barang Service',administrasi:'Administrasi',selesai:'Service Selesai',jenis:'Jenis Barang & Biaya Service',stok:'Stok Sparepart',riwayat:'Riwayat Service',laporan:'Laporan'};document.getElementById('pageTitle').textContent=titles[page]||'Dashboard';document.getElementById('sidebar').classList.remove('open');refreshCurrentPage();}
+
+    // ===== DASHBOARD =====
+    function renderDashboard(){const tM=allServices.length,tP=allServices.filter(s=>s.status==='proses').length,tS=allServices.filter(s=>s.status==='selesai').length,tD=allServices.filter(s=>s.status==='diambil'),pn=tD.reduce((a,s)=>a+(Number(s.biayaService||0)+Number(s.biayaSparepart||0)),0);document.getElementById('dashStats').innerHTML=`<div class="stat-card"><div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(6,182,212,0.15)"><i class="fas fa-boxes-stacked" style="color:#06B6D4"></i></div><span class="text-xs font-mono" style="color:var(--muted)">TOTAL</span></div><p class="text-2xl font-bold">${tM}</p><p class="text-xs mt-1" style="color:var(--muted)">Barang Diterima</p></div><div class="stat-card"><div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(245,158,11,0.15)"><i class="fas fa-gears" style="color:#F59E0B"></i></div><span class="text-xs font-mono" style="color:var(--muted)">AKTIF</span></div><p class="text-2xl font-bold">${tP}</p><p class="text-xs mt-1" style="color:var(--muted)">Sedang Dikerjakan</p></div><div class="stat-card"><div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(16,185,129,0.15)"><i class="fas fa-circle-check" style="color:#10B981"></i></div><span class="text-xs font-mono" style="color:var(--muted)">SIAP</span></div><p class="text-2xl font-bold">${tS}</p><p class="text-xs mt-1" style="color:var(--muted)">Siap Diambil</p></div><div class="stat-card"><div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(16,185,129,0.15)"><i class="fas fa-money-bill-wave" style="color:#34D399"></i></div><span class="text-xs font-mono" style="color:var(--muted)">POMAS</span></div><p class="text-2xl font-bold">${formatRupiah(pn)}</p><p class="text-xs mt-1" style="color:var(--muted)">Total Pendapatan</p></div>`;const rc=allServices.slice(0,5);document.getElementById('dashRecentTable').innerHTML=rc.length?rc.map(s=>`<tr><td class="font-mono text-xs" style="color:var(--accent)">${s.noService}</td><td>${s.namaPelanggan}</td><td>${s.merek||'-'}</td><td>${statusBadge(s.status)}</td><td class="text-xs" style="color:var(--muted)">${formatDate(s.tanggalMasuk)}</td></tr>`).join(''):'<tr><td colspan="5" class="text-center py-8" style="color:var(--muted)">Belum ada data</td></tr>';renderRevenueChart();renderStatusChart();}
+    function renderRevenueChart(){const ctx=document.getElementById('revenueChart').getContext('2d');if(revenueChartInstance)revenueChartInstance.destroy();const days=[],revs=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}));const ds=d.toDateString();revs.push(allServices.filter(s=>{if(s.status!=='diambil'||!s.tanggalAmbil)return false;const t=s.tanggalAmbil.toDate?s.tanggalAmbil.toDate():new Date(s.tanggalAmbil);return t.toDateString()===ds;}).reduce((a,s)=>a+Number(s.biayaService||0)+Number(s.biayaSparepart||0),0));}revenueChartInstance=new Chart(ctx,{type:'bar',data:{labels:days,datasets:[{label:'Pendapatan',data:revs,backgroundColor:'rgba(16,185,129,0.3)',borderColor:'#10B981',borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#64748B',callback:v=>'Rp '+(v/1000)+'k'},grid:{color:'rgba(31,45,71,0.5)'}},x:{ticks:{color:'#64748B'},grid:{display:false}}}}});}
+    function renderStatusChart(){const ctx=document.getElementById('statusChart').getContext('2d');if(statusChartInstance)statusChartInstance.destroy();const c={masuk:0,diperiksa:0,proses:0,selesai:0,diambil:0};allServices.forEach(s=>{if(c[s.status]!==undefined)c[s.status]++;});statusChartInstance=new Chart(ctx,{type:'doughnut',data:{labels:['Masuk','Diperiksa','Proses','Selesai','Diambil'],datasets:[{data:Object.values(c),backgroundColor:['#06B6D4','#F59E0B','#A78BFA','#10B981','#64748B'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{color:'#94A3B8',padding:12,font:{size:11}}}},cutout:'65%'}});}
+
+    // ===== TERIMA BARANG =====
+    function renderTerima(){const sel=document.getElementById('tJenis');sel.innerHTML='<option value="">Pilih jenis barang</option>';allJenis.forEach(j=>{sel.innerHTML+=`<option value="${j.nama}" data-biaya="${j.biaya}">${j.nama} - ${formatRupiah(j.biaya)}</option>`;});sel.onchange=function(){const o=sel.options[sel.selectedIndex];if(o.dataset.biaya)document.getElementById('tEstimasi').value=o.dataset.biaya;};const td=new Date().toDateString(),hi=allServices.filter(s=>{const d=s.tanggalMasuk?.toDate?s.tanggalMasuk.toDate():null;return d&&d.toDateString()===td;}),ct=document.getElementById('terimaHariIni');if(hi.length===0)ct.innerHTML='<p class="text-sm" style="color:var(--muted)">Belum ada barang hari ini</p>';else ct.innerHTML=hi.map(s=>`<div class="flex items-center justify-between py-2 border-b" style="border-color:var(--border)"><div><p class="text-sm font-semibold">${s.noService}</p><p class="text-xs" style="color:var(--muted)">${s.merek} - ${s.namaPelanggan}</p></div>${statusBadge(s.status)}</div>`).join('');}
+    async function simpanTerima(e){e.preventDefault();const ns=generateNoService(),data={noService:ns,namaPelanggan:document.getElementById('tNama').value.trim(),noTelp:document.getElementById('tTelp').value.trim(),alamat:document.getElementById('tAlamat').value.trim(),jenisBarang:document.getElementById('tJenis').value,merek:document.getElementById('tMerek').value.trim(),typeBarang:document.getElementById('tType').value.trim(),keluhan:document.getElementById('tKeluhan').value.trim(),kelengkapan:document.getElementById('tKelengkapan').value.trim(),noSeri:document.getElementById('tSeri').value.trim(),estimasiBiaya:Number(document.getElementById('tEstimasi').value)||0,status:'masuk',tanggalMasuk:firebase.firestore.FieldValue.serverTimestamp(),biayaService:0,biayaSparepart:0,catatanTeknisi:'',tanggalAmbil:null};try{const docRef=await db.collection('services').add(data);showToast(`Barang diterima! No: ${ns}`);data.tanggalMasuk=new Date();data.id=docRef.id;downloadBuktiTitip(data);document.getElementById('formTerima').reset();}catch(err){showToast('Gagal: '+err.message,'error');}return false;}
+
+    // ===== DAFTAR BARANG =====
+    function renderDaftar(){const search=(document.getElementById('searchDaftar')?.value||'').toLowerCase(),filter=document.getElementById('filterStatus')?.value||'';let data=allServices;if(filter)data=data.filter(s=>s.status===filter);if(search)data=data.filter(s=>(s.noService||'').toLowerCase().includes(search)||(s.namaPelanggan||'').toLowerCase().includes(search)||(s.merek||'').toLowerCase().includes(search));const tbody=document.getElementById('daftarTable');if(data.length===0){tbody.innerHTML='<tr><td colspan="11" class="text-center py-8" style="color:var(--muted)">Tidak ada data</td></tr>';return;}tbody.innerHTML=data.map(s=>{const id=s.status==='diambil';const totalBiaya = (Number(s.biayaService)||0) + (Number(s.biayaSparepart)||0);return`<tr><td class="font-mono text-xs" style="color:var(--accent)">${s.noService}</td><td class="text-xs" style="color:var(--muted)">${formatDate(s.tanggalMasuk)}</td><td><div class="font-semibold text-sm">${s.namaPelanggan}</div><div class="text-xs" style="color:var(--muted)">${s.noTelp||''}</div><div class="text-xs" style="color:var(--muted)">${s.alamat?s.alamat.substring(0,30)+(s.alamat.length>30?'...':''):''}</div></td><td><div class="text-sm">${s.jenisBarang}</div><div class="text-xs" style="color:var(--muted)">${s.merek}</div></td><td class="text-xs font-mono">${s.typeBarang||'-'}</td><td class="text-xs font-mono">${s.noSeri||'-'}</td><td class="text-xs" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.kelengkapan||'-'}">${s.kelengkapan||'-'}</td><td class="text-xs" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.keluhan}">${s.keluhan}</td><td class="font-mono font-semibold" style="color:var(--accent2)">${formatRupiah(totalBiaya)}</td><td>${statusBadge(s.status)}</td><td><div class="flex gap-1 flex-wrap">${id?'<span class="btn-disabled" title="Final"><i class="fas fa-lock"></i></span>':`<button class="btn-secondary btn-sm" onclick="ubahStatus('${s.id}','${s.status}')" title="Ubah Status"><i class="fas fa-arrows-rotate"></i></button>`}<button class="btn-secondary btn-sm" onclick="editService('${s.id}')" title="Edit"><i class="fas fa-pen"></i></button><button class="btn-warn" onclick="downloadBuktiTitip(allServices.find(x=>x.id==='${s.id}'))" title="PDF"><i class="fas fa-file-pdf"></i></button>${id?'<span class="btn-disabled" title="Final"><i class="fas fa-trash"></i></span>':`<button class="btn-danger btn-sm" onclick="hapusService('${s.id}')" title="Hapus"><i class="fas fa-trash"></i></button>`}</div></td></tr>`;}).join('');}
+    async function ubahStatus(id,cs){if(cs==='diambil'){showToast('Status diambil tidak dapat diubah','error');return;}const fl=['masuk','diperiksa','proses','selesai','diambil'],idx=fl.indexOf(cs),ns=idx<fl.length-1?fl[idx+1]:fl[0];try{const updateData={status:ns};if(ns==='diambil'){updateData.tanggalAmbil=firebase.firestore.FieldValue.serverTimestamp();}await db.collection('services').doc(id).update(updateData);showToast(`Status diubah ke: ${ns.toUpperCase()}`);}catch(err){showToast('Gagal: '+err.message,'error');}}
+    function editService(id){const s=allServices.find(x=>x.id===id);if(!s)return;const id2=s.status==='diambil';openModal('Edit Service',`<form id="formEditService" class="space-y-4" onsubmit="return simpanEditService(event,'${id}')"><div><label class="form-label">Nama Pelanggan</label><input type="text" class="form-input" id="eNama" value="${s.namaPelanggan}" required></div><div><label class="form-label">No. Telepon</label><input type="tel" class="form-input" id="eTelp" value="${s.noTelp||''}"></div><div><label class="form-label">Alamat</label><textarea class="form-input" id="eAlamat" rows="2">${s.alamat||''}</textarea></div><div class="grid grid-cols-2 gap-3"><div><label class="form-label">Jenis Barang</label><input type="text" class="form-input" id="eJenis" value="${s.jenisBarang||''}"></div><div><label class="form-label">Merek</label><input type="text" class="form-input" id="eMerek" value="${s.merek||''}"></div></div><div class="grid grid-cols-2 gap-3"><div><label class="form-label">Type</label><input type="text" class="form-input" id="eType" value="${s.typeBarang||''}"></div><div><label class="form-label">No. Seri</label><input type="text" class="form-input" id="eSeri" value="${s.noSeri||''}"></div></div><div><label class="form-label">Kelengkapan</label><input type="text" class="form-input" id="eKelengkapan" value="${s.kelengkapan||''}"></div><div><label class="form-label">Keluhan</label><textarea class="form-input" id="eKeluhan" rows="2">${s.keluhan||''}</textarea></div><div><label class="form-label">Status</label>${id2?'<input type="text" class="form-input" value="Diambil (Final)" readonly style="background:var(--card2);cursor:not-allowed">':`<select class="form-input" id="eStatus"><option value="masuk" ${s.status==='masuk'?'selected':''}>Masuk</option><option value="diperiksa" ${s.status==='diperiksa'?'selected':''}>Diperiksa</option><option value="proses" ${s.status==='proses'?'selected':''}>Dalam Proses</option><option value="selesai" ${s.status==='selesai'?'selected':''}>Selesai</option></select>`}</div><div class="flex gap-3"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Simpan</button><button type="button" class="btn-secondary" onclick="closeModal()">Batal</button></div></form>`);}
+    async function simpanEditService(e,id){e.preventDefault();const s=allServices.find(x=>x.id===id),id2=s&&s.status==='diambil',ud={namaPelanggan:document.getElementById('eNama').value.trim(),noTelp:document.getElementById('eTelp').value.trim(),alamat:document.getElementById('eAlamat').value.trim(),jenisBarang:document.getElementById('eJenis').value.trim(),merek:document.getElementById('eMerek').value.trim(),typeBarang:document.getElementById('eType').value.trim(),noSeri:document.getElementById('eSeri').value.trim(),kelengkapan:document.getElementById('eKelengkapan').value.trim(),keluhan:document.getElementById('eKeluhan').value.trim()};if(!id2&&document.getElementById('eStatus'))ud.status=document.getElementById('eStatus').value;try{await db.collection('services').doc(id).update(ud);showToast('Data diperbarui');closeModal();}catch(err){showToast('Gagal: '+err.message,'error');}return false;}
+    async function hapusService(id){const s=allServices.find(x=>x.id===id);if(s&&s.status==='diambil'){showToast('Status diambil tidak dapat dihapus','error');return;}if(!confirm('Yakin hapus?'))return;try{await db.collection('services').doc(id).delete();showToast('Dihapus');}catch(err){showToast('Gagal: '+err.message,'error');}}
+
+    // ===== ADMINISTRASI =====
+    function renderAdministrasi(){const siapAmbil=allServices.filter(s=>s.status==='selesai');const container=document.getElementById('listSiapAmbil');if(siapAmbil.length===0){container.innerHTML='<p class="text-xs" style="color:var(--muted)">Tidak ada barang siap diambil</p>';}else{container.innerHTML=siapAmbil.map(s=>{const hasDraft=savedSparepartDrafts[s.id]&&savedSparepartDrafts[s.id].length>0;return`<button class="w-full text-left p-3 rounded-lg transition-all ${hasDraft?'border-amber-500':'hover:border-emerald-500'}" style="background:var(--bg);border:1px solid ${hasDraft?'rgba(245,158,11,0.5)':'var(--border)'}" onclick="pilihPengambilan('${s.id}')"><div class="flex items-center justify-between"><div><p class="font-mono text-xs font-semibold" style="color:var(--accent)">${s.noService}</p><p class="text-xs mt-1">${s.namaPelanggan} - ${s.merek}</p></div>${hasDraft?'<span class="text-xs px-2 py-1 rounded-full" style="background:rgba(245,158,11,0.15);color:#F59E0B"><i class="fas fa-puzzle-piece mr-1"></i>Ada Sparepart</span>':''}</div></button>`;}).join('');}document.getElementById('detailPengambilan').style.display='none';document.getElementById('formPengambilanCard').style.display='none';document.getElementById('strukContainer').style.display='none';if(selectedAmbilId&&savedSparepartDrafts[selectedAmbilId]){sparepartRows=savedSparepartDrafts[selectedAmbilId].map(r=>{sparepartRowCounter=Math.max(sparepartRowCounter,r.rowId);return{...r};});}else{sparepartRows=[];}renderSparepartPicker();}
+    function cariPengambilan(){const no=document.getElementById('cariNoService').value.trim().toUpperCase();const f=allServices.find(s=>s.noService.toUpperCase()===no);if(!f){showToast('Nomor service tidak ditemukan','error');return;}if(f.status!=='selesai'){showToast(`Barang belum siap diambil. Status: ${f.status.toUpperCase()}`,'info');return;}pilihPengambilan(f.id);}
+    function pilihPengambilan(id){selectedAmbilId=id;const s=allServices.find(x=>x.id===id);if(!s)return;document.getElementById('detailPengambilan').style.display='block';document.getElementById('detailAmbilContent').innerHTML=`<div class="grid grid-cols-2 gap-4 text-sm"><div><span class="form-label">No. Service</span><p class="font-mono font-semibold" style="color:var(--accent)">${s.noService}</p></div><div><span class="form-label">Status</span><p>${statusBadge(s.status)}</p></div><div><span class="form-label">Pelanggan</span><p>${s.namaPelanggan}</p></div><div><span class="form-label">Telepon</span><p>${s.noTelp||'-'}</p></div><div class="col-span-2"><span class="form-label">Alamat</span><p>${s.alamat||'-'}</p></div><div><span class="form-label">Jenis Barang</span><p>${s.jenisBarang}</p></div><div><span class="form-label">Merek</span><p>${s.merek}</p></div><div><span class="form-label">Type</span><p>${s.typeBarang||'-'}</p></div><div><span class="form-label">No. Seri</span><p>${s.noSeri||'-'}</p></div><div class="col-span-2"><span class="form-label">Kelengkapan</span><p>${s.kelengkapan||'-'}</p></div><div class="col-span-2"><span class="form-label">Keluhan</span><p>${s.keluhan}</p></div><div><span class="form-label">Tanggal Masuk</span><p>${formatDateTime(s.tanggalMasuk)}</p></div><div><span class="form-label">Estimasi Biaya</span><p class="font-semibold">${formatRupiah(s.estimasiBiaya)}</p></div></div>`;document.getElementById('formPengambilanCard').style.display='block';document.getElementById('aBiaya').value=s.estimasiBiaya||0;document.getElementById('aCatatan').value='';document.getElementById('strukContainer').style.display='none';if(savedSparepartDrafts[id]){sparepartRows=savedSparepartDrafts[id].map(r=>{sparepartRowCounter=Math.max(sparepartRowCounter,r.rowId);return{...r};});}else{sparepartRows=[];}renderSparepartPicker();hitungTotalSparepart();}
+    function tambahBarisSparepart(){if(allSparepart.length===0){showToast('Stok sparepart kosong.','info');return;}sparepartRowCounter++;sparepartRows.push({rowId:sparepartRowCounter,sparepartId:'',qty:1});saveSparepartDraft();renderSparepartPicker();}
+    function hapusBarisSparepart(rowId){sparepartRows=sparepartRows.filter(r=>r.rowId!==rowId);saveSparepartDraft();renderSparepartPicker();hitungTotalSparepart();}
+    function onSparepartSelect(rowId,sparepartId){const row=sparepartRows.find(r=>r.rowId===rowId);if(row){row.sparepartId=sparepartId;row.qty=1;}saveSparepartDraft();renderSparepartPicker();hitungTotalSparepart();}
+    function onQtyChange(rowId,qty){const row=sparepartRows.find(r=>r.rowId===rowId);if(row){row.qty=Math.max(1,Number(qty)||1);}saveSparepartDraft();renderSparepartPicker();hitungTotalSparepart();}
+    function saveSparepartDraft(){if(!selectedAmbilId)return;savedSparepartDrafts[selectedAmbilId]=sparepartRows.map(r=>({rowId:r.rowId,sparepartId:r.sparepartId,qty:r.qty}));}
+    function renderSparepartPicker(){const tbody=document.getElementById('sparepartPickerBody');if(sparepartRows.length===0){tbody.innerHTML=`<tr id="sparepartEmptyRow"><td colspan="6" class="text-center py-3 text-xs" style="color:var(--muted)">Klik "Tambah" untuk memilih sparepart</td></tr>`;return;}const av=allSparepart.filter(s=>Number(s.jumlah)>0);tbody.innerHTML=sparepartRows.map(row=>{const sp=allSparepart.find(s=>s.id===row.sparepartId);const h=sp?Number(sp.harga):0,st=sp?Number(sp.jumlah):0,sub=h*row.qty,w=sp&&row.qty>st;const opts=av.map(s=>`<option value="${s.id}" ${s.id===row.sparepartId?'selected':''}>${s.nama} (Stok: ${s.jumlah})</option>`).join('');return`<tr><td style="padding:4px 4px"><select class="form-input" style="font-size:12px;padding:6px 8px;min-width:140px" onchange="onSparepartSelect(${row.rowId},this.value)"><option value="">-- Pilih --</option>${opts}</select></td><td style="padding:4px 4px"><span class="font-mono text-xs" style="color:${sp?'var(--accent)':'var(--muted)'}">${sp?formatRupiah(h):'-'}</span></td><td style="padding:4px 4px"><span class="font-mono text-xs" style="color:${w?'var(--danger)':'var(--text)'}">${sp?st:'-'}</span></td><td style="padding:4px 4px"><input type="number" class="form-input" style="font-size:12px;padding:5px 8px;width:70px;text-align:center" value="${row.qty}" min="1" max="${st||999}" onchange="onQtyChange(${row.rowId},this.value)" ${!sp?'disabled':''}></td><td style="padding:4px 4px"><span class="font-mono text-xs font-bold" style="color:var(--accent2)">${sp?formatRupiah(sub):'-'}</span></td><td style="padding:4px 4px;text-align:center"><button type="button" class="btn-danger btn-sm" style="padding:4px 8px" onclick="hapusBarisSparepart(${row.rowId})"><i class="fas fa-times"></i></button></td></tr>`;}).join('');}
+    function hitungTotalSparepart(){let t=0;sparepartRows.forEach(r=>{const sp=allSparepart.find(s=>s.id===r.sparepartId);if(sp)t+=Number(sp.harga)*r.qty;});document.getElementById('aSparepart').value=t;}
     
-    // Please note: The rest of the functions (CRUD operations) remain unchanged
-    // from the original code. Only the authentication system was modified.
+    // ===== FUNGSI SIMPAN SPAREPART KE DATABASE =====
+    async function simpanSparepartKeDatabase() {
+        if(!selectedAmbilId) {
+            showToast('Pilih barang terlebih dahulu','error');
+            return;
+        }
+        const rows = sparepartRows.filter(r => r.sparepartId);
+        if(rows.length === 0) {
+            showToast('Tidak ada sparepart yang dipilih untuk disimpan','error');
+            return;
+        }
+        try {
+            const sparepartData = rows.map(r => {
+                const sp = allSparepart.find(s => s.id === r.sparepartId);
+                return {
+                    sparepartId: r.sparepartId,
+                    nama: sp ? sp.nama : 'Unknown',
+                    qty: r.qty,
+                    harga: sp ? Number(sp.harga) : 0,
+                    subtotal: sp ? Number(sp.harga) * r.qty : 0
+                };
+            });
+            await db.collection('services').doc(selectedAmbilId).update({
+                sparepartDigunakan: sparepartData,
+                biayaSparepart: Number(document.getElementById('aSparepart').value) || 0
+            });
+            showToast('Sparepart berhasil disimpan ke database!');
+            // Update local data
+            const s = allServices.find(x => x.id === selectedAmbilId);
+            if(s) {
+                s.sparepartDigunakan = sparepartData;
+                s.biayaSparepart = Number(document.getElementById('aSparepart').value) || 0;
+            }
+        } catch(err) {
+            showToast('Gagal menyimpan sparepart: '+err.message,'error');
+        }
+    }
+
+    // === PROSES ADMINISTRASI (tidak mengubah status ke diambil, hanya simpan biaya & sparepart) ===
+    async function prosesAdministrasi(e){e.preventDefault();if(!selectedAmbilId)return;const ur=sparepartRows.find(r=>!r.sparepartId);if(ur){showToast('Pilih sparepart terlebih dahulu atau hapus baris kosong','error');return;}for(const row of sparepartRows){const sp=allSparepart.find(s=>s.id===row.sparepartId);if(sp&&row.qty>Number(sp.jumlah)){showToast(`Stok "${sp.nama}" tidak mencukupi`,'error');return;}}const bs=Number(document.getElementById('aBiaya').value)||0,bp=Number(document.getElementById('aSparepart').value)||0,ct=document.getElementById('aCatatan').value.trim();try{// Update biaya, sparepart, catatan, tetapi status tetap "selesai"
+    await db.collection('services').doc(selectedAmbilId).update({
+        biayaService:bs,
+        biayaSparepart:bp,
+        catatanTeknisi:ct,
+        sparepartDigunakan:sparepartRows.map(r=>{
+            const sp=allSparepart.find(s=>s.id===r.sparepartId);
+            return{sparepartId:r.sparepartId,nama:sp?sp.nama:'Unknown',qty:r.qty,harga:sp?Number(sp.harga):0,subtotal:sp?Number(sp.harga)*r.qty:0};
+        })
+    });
+    // Kurangi stok sparepart
+    const batch=db.batch();
+    for(const row of sparepartRows){
+        const sp=allSparepart.find(s=>s.id===row.sparepartId);
+        if(sp){
+            const newStok=Math.max(0,Number(sp.jumlah)-row.qty);
+            batch.update(db.collection('sparepart').doc(row.sparepartId),{jumlah:newStok});
+        }
+    }
+    await batch.commit();
+    delete savedSparepartDrafts[selectedAmbilId];
+    selectedAmbilId=null;
+    showToast('Data administrasi berhasil disimpan! Stok sparepart berkurang.');
+    // Refresh tampilan
+    renderAdministrasi();
+    }catch(err){showToast('Gagal: '+err.message,'error');}return false;}
+
+    function cetakStruk(){if(!selectedAmbilId)return;const s=allServices.find(x=>x.id===selectedAmbilId);if(!s)return;const b=Number(document.getElementById('aBiaya').value)||0,sp=Number(document.getElementById('aSparepart').value)||0,t=b+sp;let sd='';const rows=savedSparepartDrafts[selectedAmbilId]||[];if(rows.length>0){sd='<div class="divider"></div><p style="font-weight:bold;margin-bottom:4px">Sparepart:</p>';rows.forEach(row=>{const s2=allSparepart.find(x=>x.id===row.sparepartId);if(s2)sd+=`<p>- ${s2.nama} x${row.qty} = ${formatRupiah(Number(s2.harga)*row.qty)}</p>`;});}const container=document.getElementById('strukContainer');container.style.display='block';container.innerHTML=`<div class="receipt-box" id="receiptContent"><h3>SERVICE ELETRONIK</h3><p style="text-align:center;font-size:10px;color:#666">Jl. R.W. Monginsidi - Bhoanawa - Ende - Hp: 085333071119</p><div class="divider"></div><p>No : ${s.noService}</p><p>Tgl: ${new Date().toLocaleDateString('id-ID')}</p><div class="divider"></div><p>Pelanggan: ${s.namaPelanggan}</p><p>Alamat   : ${s.alamat||'-'}</p><p>Barang   : ${s.jenisBarang}</p><p>Merek    : ${s.merek}</p><p>Type     : ${s.typeBarang||'-'}</p><p>No. Seri : ${s.noSeri||'-'}</p><p>Kelengkapan: ${s.kelengkapan||'-'}</p><p>Keluhan  : ${s.keluhan}</p>${sd}<div class="divider"></div><p>Biaya Service  : ${formatRupiah(b)}</p><p>Biaya Sparepart: ${formatRupiah(sp)}</p><div class="divider"></div><p style="font-size:14px;font-weight:bold">TOTAL: ${formatRupiah(t)}</p><div class="divider"></div><p style="text-align:center;font-size:10px;color:#666">Terima kasih atas kepercayaan Anda</p></div><div class="mt-4 text-center no-print"><button class="btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Cetak</button></div>`;}
+
+    // ===== SERVICE SELESAI =====
+    function renderSelesai(){
+        const search=(document.getElementById('searchSelesai')?.value||'').toLowerCase();
+        let data = allServices.filter(s => s.status === 'selesai');
+        if(search){
+            data = data.filter(s => 
+                (s.noService||'').toLowerCase().includes(search) ||
+                (s.namaPelanggan||'').toLowerCase().includes(search) ||
+                (s.merek||'').toLowerCase().includes(search)
+            );
+        }
+        const tbody = document.getElementById('selesaiTable');
+        if(data.length === 0){
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center py-8" style="color:var(--muted)">Tidak ada barang dengan status selesai</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map(s => {
+            const totalBiaya = (Number(s.biayaService)||0) + (Number(s.biayaSparepart)||0);
+            return `<tr>
+                <td class="font-mono text-xs" style="color:var(--accent)">${s.noService}</td>
+                <td class="text-xs" style="color:var(--muted)">${formatDate(s.tanggalMasuk)}</td>
+                <td>
+                    <div class="font-semibold text-sm">${s.namaPelanggan}</div>
+                    <div class="text-xs" style="color:var(--muted)">${s.noTelp||''}</div>
+                    <div class="text-xs" style="color:var(--muted)">${s.alamat?s.alamat.substring(0,30)+(s.alamat.length>30?'...':''):''}</div>
+                </td>
+                <td>
+                    <div class="text-sm">${s.jenisBarang}</div>
+                    <div class="text-xs" style="color:var(--muted)">${s.merek}</div>
+                </td>
+                <td class="text-xs font-mono">${s.typeBarang||'-'}</td>
+                <td class="text-xs font-mono">${s.noSeri||'-'}</td>
+                <td class="text-xs" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.kelengkapan||'-'}">${s.kelengkapan||'-'}</td>
+                <td class="text-xs" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.keluhan}">${s.keluhan}</td>
+                <td class="font-mono font-semibold" style="color:var(--accent2)">${formatRupiah(totalBiaya)}</td>
+                <td>${statusBadge(s.status)}</td>
+                <td>
+                    <div class="flex gap-1 flex-wrap">
+                        <button class="btn-primary btn-sm" onclick="if(confirm('Ambil barang ini?')){ubahStatus('${s.id}','${s.status}')}" title="Ambil (Status Diambil)"><i class="fas fa-hand-holding"></i> Ambil</button>
+                        <button class="btn-secondary btn-sm" onclick="editService('${s.id}')" title="Edit Data"><i class="fas fa-pen"></i></button>
+                        <button class="btn-secondary btn-sm" onclick="lihatStrukRiwayat('${s.id}')" title="Lihat Struk"><i class="fas fa-receipt"></i></button>
+                        <button class="btn-info-sm" onclick="downloadStrukRiwayatPDF('${s.id}')" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
+                        <button class="btn-danger btn-sm" onclick="hapusService('${s.id}')" title="Hapus"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ===== JENIS BARANG =====
+    function renderJenis(){const tb=document.getElementById('jenisTable');if(allJenis.length===0){tb.innerHTML='<tr><td colspan="4" class="text-center py-8" style="color:var(--muted)">Belum ada data.</td></tr>';}else{tb.innerHTML=allJenis.map(j=>`<tr><td class="font-semibold">${j.nama}</td><td class="font-mono font-semibold" style="color:var(--accent)">${formatRupiah(j.biaya)}</td><td class="text-sm" style="color:var(--muted)">${j.deskripsi||'-'}</td><td><div class="flex gap-1"><button class="btn-secondary btn-sm" onclick="editJenis('${j.id}')"><i class="fas fa-pen"></i></button><button class="btn-danger btn-sm" onclick="hapusJenis('${j.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`).join('');}}
+    async function simpanJenis(e){e.preventDefault();try{await db.collection('jenisBarang').add({nama:document.getElementById('jNama').value.trim(),biaya:Number(document.getElementById('jBiaya').value)||0,deskripsi:document.getElementById('jDeskripsi').value.trim()});showToast('Jenis barang ditambahkan');document.getElementById('formJenis').reset();}catch(err){showToast('Gagal: '+err.message,'error');}return false;}
+    function editJenis(id){const j=allJenis.find(x=>x.id===id);if(!j)return;openModal('Edit Jenis',`<form class="space-y-4" onsubmit="return simpanEditJenis(event,'${id}')"><div><label class="form-label">Nama</label><input type="text" class="form-input" id="ejNama" value="${j.nama}" required></div><div><label class="form-label">Biaya (Rp)</label><input type="number" class="form-input" id="ejBiaya" value="${j.biaya}" required min="0"></div><div><label class="form-label">Deskripsi</label><textarea class="form-input" id="ejDeskripsi" rows="2">${j.deskripsi||''}</textarea></div><div class="flex gap-3"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Simpan</button><button type="button" class="btn-secondary" onclick="closeModal()">Batal</button></div></form>`);}
+    async function simpanEditJenis(e,id){e.preventDefault();try{await db.collection('jenisBarang').doc(id).update({nama:document.getElementById('ejNama').value.trim(),biaya:Number(document.getElementById('ejBiaya').value)||0,deskripsi:document.getElementById('ejDeskripsi').value.trim()});showToast('Diperbarui');closeModal();}catch(err){showToast('Gagal: '+err.message,'error');}return false;}
+    async function hapusJenis(id){if(!confirm('Yakin hapus?'))return;try{await db.collection('jenisBarang').doc(id).delete();showToast('Dihapus');}catch(err){showToast('Gagal: '+err.message,'error');}}
+
+    // ===== STOK SPAREPART =====
+    function renderStok(){const search=(document.getElementById('searchStok')?.value||'').toLowerCase();let data=allSparepart;if(search)data=data.filter(s=>s.nama.toLowerCase().includes(search)||(s.kategori||'').toLowerCase().includes(search));const tb=document.getElementById('stokTable');if(data.length===0){tb.innerHTML='<tr><td colspan="5" class="text-center py-8" style="color:var(--muted)">Tidak ada data</td></tr>';}else{tb.innerHTML=data.map(s=>{const sr=Number(s.jumlah)<=5;return`<tr><td class="font-semibold">${s.nama}</td><td class="text-sm" style="color:var(--muted)">${s.kategori||'-'}</td><td><span class="font-mono font-bold" style="${sr?'color:var(--danger)':'color:var(--accent)'}">${s.jumlah}</span>${sr?'<span class="ml-2 text-xs" style="color:var(--danger)"><i class="fas fa-exclamation-triangle"></i></span>':''}</td><td class="font-mono">${formatRupiah(s.harga)}</td><td><div class="flex gap-1"><button class="btn-secondary btn-sm" onclick="editSparepart('${s.id}')"><i class="fas fa-pen"></i></button><button class="btn-secondary btn-sm" onclick="tambahStok('${s.id}')"><i class="fas fa-plus"></i></button><button class="btn-danger btn-sm" onclick="hapusSparepart('${s.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;}).join('');}}
+    async function simpanSparepart(e){e.preventDefault();try{await db.collection('sparepart').add({nama:document.getElementById('sNama').value.trim(),jumlah:Number(document.getElementById('sJumlah').value)||0,harga:Number(document.getElementById('sHarga').value)||0,kategori:document.getElementById('sKategori').value.trim()});showToast('Sparepart ditambahkan');document.getElementById('formStok').reset();}catch(err){showToast('Gagal: '+err.message,'error');}return false;}
+    function editSparepart(id){const s=allSparepart.find(x=>x.id===id);if(!s)return;openModal('Edit Sparepart',`<form class="space-y-4" onsubmit="return simpanEditSparepart(event,'${id}')"><div><label class="form-label">Nama</label><input type="text" class="form-input" id="esNama" value="${s.nama}" required></div><div class="grid grid-cols-2 gap-3"><div><label class="form-label">Jumlah</label><input type="number" class="form-input" id="esJumlah" value="${s.jumlah}" required min="0"></div><div><label class="form-label">Harga (Rp)</label><input type="number" class="form-input" id="esHarga" value="${s.harga}" required min="0"></div></div><div><label class="form-label">Kategori</label><input type="text" class="form-input" id="esKategori" value="${s.kategori||''}"></div><div class="flex gap-3"><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Simpan</button><button type="button" class="btn-secondary" onclick="closeModal()">Batal</button></div></form>`);}
+    async function simpanEditSparepart(e,id){e.preventDefault();try{await db.collection('sparepart').doc(id).update({nama:document.getElementById('esNama').value.trim(),jumlah:Number(document.getElementById('esJumlah').value)||0,harga:Number(document.getElementById('esHarga').value)||0,kategori:document.getElementById('esKategori').value.trim()});showToast('Diperbarui');closeModal();}catch(err){showToast('Gagal: '+err.message,'error');}return false;}
+    async function tambahStok(id){const s=allSparepart.find(x=>x.id===id);if(!s)return;const t=prompt(`Tambah stok "${s.nama}" (saat ini: ${s.jumlah}):`,'1');if(!t||isNaN(t))return;try{await db.collection('sparepart').doc(id).update({jumlah:Number(s.jumlah)+Number(t)});showToast(`Stok +${t}`);}catch(err){showToast('Gagal: '+err.message,'error');}}
+    async function hapusSparepart(id){if(!confirm('Yakin hapus?'))return;try{await db.collection('sparepart').doc(id).delete();showToast('Dihapus');}catch(err){showToast('Gagal: '+err.message,'error');}}
+
+    // ===== RIWAYAT =====
+    function renderRiwayat(){const dari=document.getElementById('riwayatDari')?.value,sampai=document.getElementById('riwayatSampai')?.value,search=(document.getElementById('searchRiwayat')?.value||'').toLowerCase();let data=allServices.filter(s=>s.status==='diambil');if(dari){const d=new Date(dari);data=data.filter(s=>{const t=s.tanggalAmbil?.toDate?s.tanggalAmbil.toDate():null;return t&&t>=d;});}if(sampai){const d=new Date(sampai);d.setDate(d.getDate()+1);data=data.filter(s=>{const t=s.tanggalAmbil?.toDate?s.tanggalAmbil.toDate():null;return t&&t<d;});}if(search)data=data.filter(s=>(s.noService||'').toLowerCase().includes(search)||(s.namaPelanggan||'').toLowerCase().includes(search));const tb=document.getElementById('riwayatTable');if(data.length===0){tb.innerHTML='<tr><td colspan="7" class="text-center py-8" style="color:var(--muted)">Tidak ada riwayat</td></tr>';}else{tb.innerHTML=data.map(s=>{const tl=Number(s.biayaService||0)+Number(s.biayaSparepart||0);return`<tr><td class="font-mono text-xs" style="color:var(--accent)">${s.noService}</td><td class="text-xs">${formatDate(s.tanggalMasuk)}</td><td class="text-xs">${formatDate(s.tanggalAmbil)}</td><td>${s.namaPelanggan}</td><td>${s.jenisBarang} - ${s.merek}</td><td class="font-mono font-semibold">${formatRupiah(tl)}</td><td><div class="flex gap-1"><button class="btn-secondary btn-sm" onclick="lihatStrukRiwayat('${s.id}')" title="Lihat"><i class="fas fa-receipt"></i></button><button class="btn-info-sm" onclick="downloadStrukRiwayatPDF('${s.id}')" title="PDF"><i class="fas fa-file-pdf"></i></button></div></td></tr>`;}).join('');}}
+    function lihatStrukRiwayat(id){const s=allServices.find(x=>x.id===id);if(!s)return;const tl=Number(s.biayaService||0)+Number(s.biayaSparepart||0);let sd='';if(s.sparepartDigunakan&&s.sparepartDigunakan.length>0){sd='<div class="divider"></div><p style="font-weight:bold;margin-bottom:4px">Sparepart:</p>';s.sparepartDigunakan.forEach(sp=>{sd+=`<p>- ${sp.nama} x${sp.qty} = ${formatRupiah(sp.subtotal)}</p>`;});}openModal('Struk Service',`<div class="receipt-box"><h3>SERVICE ELEKTRONIK</h3><p style="text-align:center;font-size:10px;color:#666">Jl. R.W. Monginsidi - Bhoanawa - Ende - Hp : 085333071119</p><div class="divider"></div><p>No : ${s.noService}</p><p>Tgl: ${formatDate(s.tanggalAmbil)}</p><div class="divider"></div><p>Pelanggan: ${s.namaPelanggan}</p><p>Alamat   : ${s.alamat||'-'}</p><p>Barang   : ${s.jenisBarang}</p><p>Merek    : ${s.merek}</p><p>Type     : ${s.typeBarang||'-'}</p><p>No. Seri : ${s.noSeri||'-'}</p><p>Kelengkapan: ${s.kelengkapan||'-'}</p><p>Keluhan  : ${s.keluhan}</p>${s.catatanTeknisi?`<p>Catatan  : ${s.catatanTeknisi}</p>`:''}${sd}<div class="divider"></div><p>Biaya Service  : ${formatRupiah(s.biayaService)}</p><p>Biaya Sparepart: ${formatRupiah(s.biayaSparepart)}</p><div class="divider"></div><p style="font-size:14px;font-weight:bold">TOTAL: ${formatRupiah(tl)}</p><div class="divider"></div><p style="text-align:center;font-size:10px;color:#666">Terima kasih atas kepercayaan Anda</p></div>`);}
+
+    // ===== LAPORAN =====
+    function renderLaporan(){const diambil=allServices.filter(s=>s.status==='diambil'),tp=diambil.reduce((a,s)=>a+Number(s.biayaService||0)+Number(s.biayaSparepart||0),0),ts=diambil.length,ra=ts>0?Math.round(tp/ts):0,sr=allSparepart.filter(s=>Number(s.jumlah)<=5).length;document.getElementById('laporanStats').innerHTML=`<div class="stat-card"><p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Total Pendapatan</p><p class="text-xl font-bold mt-2">${formatRupiah(tp)}</p></div><div class="stat-card"><p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Service Selesai</p><p class="text-xl font-bold mt-2">${ts}</p></div><div class="stat-card"><p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Rata-rata Biaya</p><p class="text-xl font-bold mt-2">${formatRupiah(ra)}</p></div><div class="stat-card"><p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--muted)">Stok Rendah</p><p class="text-xl font-bold mt-2" style="color:${sr>0?'var(--danger)':'var(--accent)'}">${sr}</p></div>`;const bv=document.getElementById('laporanBulan')?.value;let dl=diambil;if(bv){const[y,m]=bv.split('-').map(Number);dl=diambil.filter(s=>{const t=s.tanggalAmbil?.toDate?s.tanggalAmbil.toDate():null;return t&&t.getFullYear()===y&&(t.getMonth()+1)===m;});}const tb=document.getElementById('laporanTable');let gt=0;if(dl.length===0){tb.innerHTML='<tr><td colspan="8" class="text-center py-8" style="color:var(--muted)">Tidak ada data</td></tr>';}else{tb.innerHTML=dl.map((s,i)=>{const bs=Number(s.biayaService||0),bp=Number(s.biayaSparepart||0),t=bs+bp;gt+=t;return`<tr><td>${i+1}</td><td class="font-mono text-xs" style="color:var(--accent)">${s.noService}</td><td class="text-xs">${formatDate(s.tanggalAmbil)}</td><td>${s.namaPelanggan}</td><td>${s.jenisBarang}</td><td class="font-mono">${formatRupiah(bs)}</td><td class="font-mono">${formatRupiah(bp)}</td><td class="font-mono font-bold">${formatRupiah(t)}</td></tr>`;}).join('');}document.getElementById('laporanTotal').innerHTML=`<div class="text-right"><span class="text-sm" style="color:var(--muted)">Grand Total: </span><span class="text-lg font-bold" style="color:var(--accent)">${formatRupiah(gt)}</span></div>`;renderMonthlyChart();renderJenisChart();}
+    function renderMonthlyChart(){const ctx=document.getElementById('monthlyChart').getContext('2d');if(monthlyChartInstance)monthlyChartInstance.destroy();const ms=[],rvs=[],nw=new Date();for(let i=5;i>=0;i--){const d=new Date(nw.getFullYear(),nw.getMonth()-i,1);ms.push(d.toLocaleDateString('id-ID',{month:'short',year:'2-digit'}));const y=d.getFullYear(),m=d.getMonth();rvs.push(allServices.filter(s=>{if(s.status!=='diambil'||!s.tanggalAmbil)return false;const t=s.tanggalAmbil.toDate?s.tanggalAmbil.toDate():new Date(s.tanggalAmbil);return t.getFullYear()===y&&t.getMonth()===m;}).reduce((a,s)=>a+Number(s.biayaService||0)+Number(s.biayaSparepart||0),0));}monthlyChartInstance=new Chart(ctx,{type:'line',data:{labels:ms,datasets:[{label:'Pendapatan',data:rvs,borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#10B981',pointRadius:5}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#64748B',callback:v=>'Rp '+(v/1000)+'k'},grid:{color:'rgba(31,45,71,0.5)'}},x:{ticks:{color:'#64748B'},grid:{display:false}}}}});}
+    function renderJenisChart(){const ctx=document.getElementById('jenisChart').getContext('2d');if(jenisChartInstance)jenisChartInstance.destroy();const c={};allServices.forEach(s=>{c[s.jenisBarang]=(c[s.jenisBarang]||0)+1;});const sorted=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,6),colors=['#10B981','#06B6D4','#F59E0B','#A78BFA','#EF4444','#EC4899'];jenisChartInstance=new Chart(ctx,{type:'bar',data:{labels:sorted.map(s=>s[0]),datasets:[{label:'Jumlah',data:sorted.map(s=>s[1]),backgroundColor:colors.map(c=>c+'44'),borderColor:colors,borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#64748B'},grid:{color:'rgba(31,45,71,0.5)'}},y:{ticks:{color:'#94A3B8',font:{size:11}},grid:{display:false}}}}});}
+
+    function updateClock(){document.getElementById('clockDisplay').textContent=new Date().toLocaleTimeString('id-ID');}setInterval(updateClock,1000);updateClock();
+
+    // ===== INIT =====
+    function initApp(){const nw=new Date();document.getElementById('laporanBulan').value=`${nw.getFullYear()}-${String(nw.getMonth()+1).padStart(2,'0')}`;document.getElementById('riwayatDari').value=`${nw.getFullYear()}-${String(nw.getMonth()+1).padStart(2,'0')}-01`;}
+
+    loadTheme();
     </script>
 </body>
 </html>
